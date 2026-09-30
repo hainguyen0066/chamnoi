@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Admin\BlockController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepositController;
 use App\Http\Controllers\Admin\DepositPackageController;
+use App\Http\Controllers\Admin\GameKickController;
 use App\Http\Controllers\Admin\KnbExchangeController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PostController;
@@ -16,8 +19,10 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WebhookLogController;
 use Illuminate\Support\Facades\Route;
 
-// Root: về trang login admin
-Route::get('/', fn () => redirect()->route('admin.login'));
+// Root: về game-kicks nếu đã đăng nhập, ngược lại về trang login admin
+Route::get('/', fn () => auth('admin')->check()
+    ? redirect()->route('admin.game-kicks.index')
+    : redirect()->route('admin.login'));
 
 Route::prefix('admin')->name('admin.')->group(function () {
 
@@ -25,6 +30,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login',  [AdminAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+        Route::get('/2fa-challenge',  [AdminAuthController::class, 'show2faChallenge'])->name('2fa.challenge');
+        Route::post('/2fa-challenge', [AdminAuthController::class, 'verify2faChallenge'])->name('2fa.challenge.submit');
     });
 
     Route::post('/logout', [AdminAuthController::class, 'logout'])
@@ -33,7 +40,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Khu vực quản trị — bắt buộc đăng nhập bằng guard admin
     Route::middleware('auth:admin')->group(function () {
-        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/', fn () => redirect()->route('admin.game-kicks.index'))->name('dashboard');
 
         Route::resource('categories', CategoryController::class)->except(['show']);
 
@@ -56,6 +63,24 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::post('users/{user}/change-password', [UserController::class, 'changePassword'])->name('users.change-password');
         Route::post('users/{user}/create-game-account', [UserController::class, 'createGameAccount'])->name('users.create-game-account');
+
+        // Kick Người Chơi (GameServer API v2)
+        Route::get('game-kicks', [GameKickController::class, 'index'])->name('game-kicks.index');
+        Route::post('game-kicks', [GameKickController::class, 'kick'])->middleware('throttle:30,1')->name('game-kicks.store');
+        Route::post('game-kicks/{kickLog}/status', [GameKickController::class, 'checkStatus'])->name('game-kicks.status');
+
+        // Quản lý Tài khoản (Admin & User)
+        Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+        Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');
+        Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+        Route::patch('accounts/{account}/toggle-status', [AccountController::class, 'toggleStatus'])->name('accounts.toggle-status');
+        Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+
+        // Cài đặt Bảo mật 2FA
+        Route::get('security/two-factor', [TwoFactorController::class, 'index'])->name('two-factor.index');
+        Route::post('security/two-factor/enable', [TwoFactorController::class, 'enable'])->name('two-factor.enable');
+        Route::post('security/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
+        Route::post('security/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes');
 
         Route::get('deposits', [DepositController::class, 'index'])->name('deposits.index');
         Route::get('deposits/create', [DepositController::class, 'create'])->name('deposits.create');
