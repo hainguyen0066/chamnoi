@@ -1,0 +1,121 @@
+/*
+ * SINH TỰ ĐỘNG từ volam-laravel/public/frontend/assets/css/post-content.css — sửa bên đó rồi sinh lại,
+ * đừng sửa tay file này. Áp cùng kiểu chữ của trang tin tức cho vùng soạn thảo CKEditor trong admin,
+ * để bài soạn ra nhìn và xuống dòng giống hệt trên website (Tailwind preflight của admin cũng reset
+ * danh sách/tiêu đề giống CSS game).
+ */
+
+/* Khung soạn thảo rộng đúng bằng cột bài viết trên website (675px) => chữ xuống dòng ở cùng chỗ. */
+.ck.ck-editor__main {
+    background: #efe6d2;
+    padding: 16px 0;
+}
+.ck.ck-editor__main > .ck-editor__editable.ck-content {
+    box-sizing: content-box;
+    width: 675px;
+    max-width: calc(100% - 48px);
+    min-height: 420px;
+    margin: 0 auto;
+    padding: 20px 24px !important;
+    background: #fffcf0;
+    border-radius: 6px;
+}
+
+.ck.ck-editor__editable.ck-content {
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #2a1810;
+    text-align: left;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Đoạn văn: Enter trong editor = đoạn mới (có khoảng cách), Shift+Enter = xuống dòng (<br>) */
+.ck.ck-editor__editable.ck-content p { margin: 0 0 .9em; text-align: inherit; }
+.ck.ck-editor__editable.ck-content > :last-child { margin-bottom: 0; }
+
+/* Tiêu đề (Heading 1..3 của editor lưu thành h2..h4) */
+.ck.ck-editor__editable.ck-content h1,
+.ck.ck-editor__editable.ck-content h2,
+.ck.ck-editor__editable.ck-content h3,
+.ck.ck-editor__editable.ck-content h4,
+.ck.ck-editor__editable.ck-content h5,
+.ck.ck-editor__editable.ck-content h6 {
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    color: #562815;
+    line-height: 1.35;
+    margin: 1.1em 0 .5em;
+}
+.ck.ck-editor__editable.ck-content h1 { font-size: 1.75em; }
+.ck.ck-editor__editable.ck-content h2 { font-size: 1.5em; }
+.ck.ck-editor__editable.ck-content h3 { font-size: 1.3em; }
+.ck.ck-editor__editable.ck-content h4 { font-size: 1.15em; }
+.ck.ck-editor__editable.ck-content h5,
+.ck.ck-editor__editable.ck-content h6 { font-size: 1em; }
+
+/* Danh sách: giao diện game đặt li inline + không dấu cho toàn trang */
+.ck.ck-editor__editable.ck-content ul,
+.ck.ck-editor__editable.ck-content ol { margin: 0 0 .9em; padding-left: 1.6em; }
+.ck.ck-editor__editable.ck-content ul { list-style-type: disc; }
+.ck.ck-editor__editable.ck-content ul ul { list-style-type: circle; }
+.ck.ck-editor__editable.ck-content ul ul ul { list-style-type: square; }
+.ck.ck-editor__editable.ck-content ol { list-style-type: decimal; }
+.ck.ck-editor__editable.ck-content li {
+    display: list-item;
+    list-style: inherit;          /* kiểu dấu đặt trên ul/ol (kể cả kiểu chọn trong editor) */
+    margin: .25em 0;
+    cursor: auto;
+}
+.ck.ck-editor__editable.ck-content li > ul,
+.ck.ck-editor__editable.ck-content li > ol { margin: .25em 0 0; }
+.ck.ck-editor__editable.ck-content .todo-list { padding-left: 0; list-style: none; }
+
+/* Chữ nghiêng / icon: giao diện game đặt i, svg { margin: 0 10px } */
+.ck.ck-editor__editable.ck-content i,
+.ck.ck-editor__editable.ck-content em,
+.ck.ck-editor__editable.ck-content svg { margin: 0; }
+.ck.ck-editor__editable.ck-content strong,
+.ck.ck-editor__editable.ck-content b { font-weight: 700; }
+
+.ck.ck-editor__editable.ck-content a { color: #2d548e; text-decoration: underline; }
+.ck.ck-editor__editable.ck-content a:hover { color: #1b3a66; }
+
+.ck.ck-editor__editable.ck-content img { height: auto; }
+.ck.ck-editor__editable.ck-content figure { margin: 1em auto; }
+.ck.ck-editor__editable.ck-content figure.image.image-style-side,
+.ck.ck-editor__editable.ck-content figure.image.image-style-align-right { margin-left: 1.2em; }
+
+.ck.ck-editor__editable.ck-content blockquote {
+    margin: 1em 0;
+    padding: .6em 1em;
+    border-left: 4px solid #c8913a;
+    background: rgba(233, 177, 100, .12);
+    font-style: italic;
+}
+
+.ck.ck-editor__editable.ck-content hr { border: 0; border-top: 1px solid #d9b98a; margin: 1.4em 0; }
+
+.ck.ck-editor__editable.ck-content figure.table { margin: 1em auto; }
+.ck.ck-editor__editable.ck-content table { border-collapse: collapse; width: 100%; }
+.ck.ck-editor__editable.ck-content table td,
+.ck.ck-editor__editable.ck-content table th {
+    border: 1px solid #bfa27a;
+    padding: 6px 10px;
+    vertical-align: top !important;
+    min-width: 2em;
+}
+.ck.ck-editor__editable.ck-content table th { background: #f6e3bf; font-weight: 700; text-align: left; }
+
+.ck.ck-editor__editable.ck-content code { font-family: Consolas, "Courier New", monospace; font-size: .9em; }
+.ck.ck-editor__editable.ck-content pre {
+    background: #2a1810;
+    color: #f7e7c0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    overflow: auto;
+    text-align: left;
+}
+.ck.ck-editor__editable.ck-content pre code { background: none; color: inherit; font-size: 13px; }
+
