@@ -34,7 +34,7 @@ class ProcessGameKickBatch implements ShouldQueue
 
     public function handle(): void
     {
-        $kickUrl = (string) (env('GAME_KICK_API_URL') ?: config('services.game_kick.url', 'http://103.206.218.156:8090/v2/kick.php'));
+        $kickUrl = (string) (env('GAME_KICK_API_URL') ?: config('services.game_kick.url', 'http://103.206.216.8:8090/v2/kick.php'));
         $key = (string) (env('KICK_KEY') ?: env('GAME_KICK_KEY') ?: config('services.game_kick.key', ''));
         $httpTimeout = (int) (env('GAME_KICK_TIMEOUT') ?: config('services.game_kick.timeout', 30));
 

@@ -89,8 +89,8 @@ return [
 
     // API Kick người chơi khỏi GameServer (Tình Trong Thiên Hạ Mobile)
     'game_kick' => [
-        'url' => env('GAME_KICK_API_URL', 'http://103.206.218.156:8090/v2/kick.php'),
-        'status_url' => env('GAME_KICK_STATUS_API_URL', 'http://103.206.218.156:8090/v2/kick_status.php'),
+        'url' => env('GAME_KICK_API_URL', 'http://103.206.216.8:8090/v2/kick.php'),
+        'status_url' => env('GAME_KICK_STATUS_API_URL', 'http://103.206.216.8:8090/v2/kick_status.php'),
         'key' => env('GAME_KICK_KEY', env('KICK_KEY', '')),
         'timeout' => (int) env('GAME_KICK_TIMEOUT', 30),
     ],

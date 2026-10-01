@@ -19,8 +19,8 @@ class GameKickService
 
     public function __construct()
     {
-        $this->kickUrl = (string) (env('GAME_KICK_API_URL') ?: config('services.game_kick.url', 'http://103.206.218.156:8090/v2/kick.php'));
-        $this->statusUrl = (string) (env('GAME_KICK_STATUS_API_URL') ?: config('services.game_kick.status_url', 'http://103.206.218.156:8090/v2/kick_status.php'));
+        $this->kickUrl = (string) (env('GAME_KICK_API_URL') ?: config('services.game_kick.url', 'http://103.206.216.8:8090/v2/kick.php'));
+        $this->statusUrl = (string) (env('GAME_KICK_STATUS_API_URL') ?: config('services.game_kick.status_url', 'http://103.206.216.8:8090/v2/kick_status.php'));
         $this->key = (string) (env('KICK_KEY') ?: env('GAME_KICK_KEY') ?: config('services.game_kick.key', ''));
         $this->timeout = (int) (env('GAME_KICK_TIMEOUT') ?: config('services.game_kick.timeout', 30));
     }
