@@ -210,160 +210,21 @@
                         Admin thao tác: <span class="font-semibold text-slate-700">{{ auth('admin')->user()->name ?? 'Admin' }}</span>
                     </div>
                     <button type="submit"
-                            :disabled="loading || batchActive || !form.name"
+                            :disabled="loading || !form.name"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-rose-600/25 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-                        <template x-if="loading || batchActive">
+                        <template x-if="loading">
                             <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                             </svg>
                         </template>
-                        <template x-if="!loading && !batchActive">
+                        <template x-if="!loading">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
                             </svg>
                         </template>
-                        <span x-text="loading ? 'Đang gửi lệnh...' : (batchActive ? 'Đang chạy kick tuần tự...' : (isBatch ? 'Bắt Đầu Kick Tuần Tự ' + parsedNames.length + ' Tài Khoản' : 'Xác Nhận Kick Ngay'))"></span>
+                        <span x-text="loading ? 'Đang gửi lệnh...' : (isBatch ? 'Đưa ' + parsedNames.length + ' Tài Khoản Vào Hàng Đợi (Queue VPS)' : 'Xác Nhận Kick Ngay')"></span>
                     </button>
-                </div>
-
-                {{-- Live Client-Side Direct Batch Runner UI (Tương thích Hosting / Không cần Queue) --}}
-                <div x-show="batchItems.length > 0"
-                     x-transition
-                     class="p-5 rounded-2xl border border-indigo-200/80 bg-gradient-to-b from-indigo-50/40 via-white to-slate-50/70 shadow-sm space-y-4"
-                     style="display: none;">
-                    
-                    {{-- Header của Batch Box --}}
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-600/30">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-slate-800">Tiến Trình Kick Tuần Tự Trực Tiếp</h3>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        Hosting Friendly
-                                    </span>
-                                </div>
-                                <p class="text-xs text-slate-500">Gửi tuần tự từng acc & đệm 2.0s chống rate limit — Không cần cài đặt Queue worker</p>
-                            </div>
-                        </div>
-
-                        {{-- Badges & Controls --}}
-                        <div class="flex items-center gap-2">
-                            <template x-if="batchActive">
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-100 text-indigo-800">
-                                        <span class="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
-                                        Đang chạy: <span x-text="(batchCurrentIndex + 1) + '/' + batchItems.length"></span>
-                                    </span>
-                                    <template x-if="batchCountdown > 0">
-                                        <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
-                                            ⏳ Chờ <span x-text="batchCountdown"></span>s...
-                                        </span>
-                                    </template>
-                                    <button type="button"
-                                            @click="stopBatch"
-                                            :disabled="batchStopRequested"
-                                            class="inline-flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition shadow-xs cursor-pointer disabled:opacity-50">
-                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
-                                        </svg>
-                                        <span x-text="batchStopRequested ? 'Đang dừng...' : 'Dừng Lại'"></span>
-                                    </button>
-                                </div>
-                            </template>
-
-                            <template x-if="batchDone">
-                                <div class="flex items-center gap-2">
-                                    <button type="button"
-                                            @click="resetBatch(true)"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-sm transition cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                        </svg>
-                                        <span>Cập nhật lịch sử (F5)</span>
-                                    </button>
-                                    <button type="button"
-                                            @click="resetBatch(false)"
-                                            class="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer">
-                                        Đóng
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    {{-- Progress Bar & Stats --}}
-                    <div>
-                        <div class="flex items-center justify-between text-xs font-semibold mb-1.5">
-                            <span class="text-slate-700">
-                                Tiến độ: <span class="font-bold text-indigo-700" x-text="batchCompletedCount"></span> / <span x-text="batchItems.length"></span> đối tượng (<span x-text="batchProgressPercent + '%'"></span>)
-                            </span>
-                            <div class="flex items-center gap-3 text-xs">
-                                <span class="text-emerald-700">Thành công: <strong x-text="batchSuccessCount"></strong></span>
-                                <span class="text-rose-600">Không online / Lỗi: <strong x-text="batchFailedCount"></strong></span>
-                            </div>
-                        </div>
-
-                        {{-- Thanh tiến độ --}}
-                        <div class="w-full h-3 bg-slate-200/80 rounded-full overflow-hidden p-0.5">
-                            <div class="h-full rounded-full transition-all duration-300 bg-gradient-to-r from-indigo-500 via-rose-500 to-emerald-500"
-                                 :style="'width: ' + batchProgressPercent + '%'"></div>
-                        </div>
-                    </div>
-
-                    {{-- Danh sách chi tiết từng tài khoản trong batch --}}
-                    <div class="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-2xs max-h-72 overflow-y-auto divide-y divide-slate-100">
-                        <template x-for="(item, idx) in batchItems" :key="idx">
-                            <div class="px-4 py-2.5 flex items-center justify-between gap-3 text-xs transition"
-                                 :class="{
-                                     'bg-indigo-50/60 font-medium': item.status === 'running',
-                                     'bg-emerald-50/30': item.status === 'success',
-                                     'bg-slate-50/30': item.status === 'pending',
-                                     'bg-rose-50/20': item.status === 'not_online' || item.status === 'error',
-                                     'opacity-60': item.status === 'cancelled'
-                                 }">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <span class="font-mono text-[11px] font-bold text-slate-400 w-6" x-text="'#' + (idx + 1)"></span>
-                                    <span class="font-bold text-slate-800 truncate" x-text="item.name"></span>
-                                    <template x-if="item.gs_id">
-                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-100 text-indigo-800" x-text="'GS #' + item.gs_id"></span>
-                                    </template>
-                                </div>
-
-                                <div class="flex items-center gap-3 flex-shrink-0">
-                                    <span class="text-[11px] text-slate-500 max-w-[200px] sm:max-w-xs truncate hidden sm:inline" x-text="item.msg"></span>
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-                                          :class="{
-                                              'bg-slate-100 text-slate-600': item.status === 'pending',
-                                              'bg-amber-100 text-amber-800 border border-amber-200': item.status === 'running',
-                                              'bg-emerald-100 text-emerald-800 border border-emerald-200': item.status === 'success',
-                                              'bg-rose-100 text-rose-800 border border-rose-200': item.status === 'not_online',
-                                              'bg-red-100 text-red-800 border border-red-200': item.status === 'error',
-                                              'bg-slate-200 text-slate-600': item.status === 'cancelled'
-                                          }">
-                                        <template x-if="item.status === 'running'">
-                                            <svg class="animate-spin w-3 h-3 text-amber-700" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                            </svg>
-                                        </template>
-                                        <span x-text="
-                                            item.status === 'pending' ? 'Chờ đến lượt' :
-                                            (item.status === 'running' ? 'Đang quét 8 GS' :
-                                            (item.status === 'success' ? 'Đã Kick Thành Công' :
-                                            (item.status === 'not_online' ? 'Không Online' :
-                                            (item.status === 'cancelled' ? 'Đã Hủy' : 'Lỗi'))))
-                                        "></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
                 </div>
 
                 {{-- Live Alert Box for Latest Kick Result --}}
@@ -601,19 +462,12 @@
             return {
                 hasPending: {{ $stats['pending'] > 0 ? 'true' : 'false' }},
                 init() {
+                    // Nếu đang có tác vụ trong Queue (pending), tự động làm mới trang mỗi 3 giây để cập nhật kết quả
                     if (this.hasPending) {
                         setTimeout(() => {
                             window.location.reload();
-                        }, 2500);
+                        }, 3000);
                     }
-
-                    // Cảnh báo nếu đóng tab khi đang chạy kick tuần tự
-                    window.addEventListener('beforeunload', (e) => {
-                        if (this.batchActive) {
-                            e.preventDefault();
-                            e.returnValue = 'Tiến trình kick tuần tự đang chạy. Bạn có chắc muốn rời đi?';
-                        }
-                    });
                 },
                 form: {
                     type: 'account',
@@ -626,14 +480,6 @@
                 checkingIds: [],
                 lastResult: null,
 
-                // Client-side batch state (Hosting Friendly)
-                batchActive: false,
-                batchDone: false,
-                batchStopRequested: false,
-                batchCountdown: 0,
-                batchItems: [],
-                batchCurrentIndex: -1,
-
                 get parsedNames() {
                     if (!this.form.name) return [];
                     const list = this.form.name.split(/[,;\n\r]+/).map(s => s.trim()).filter(Boolean);
@@ -642,23 +488,6 @@
 
                 get isBatch() {
                     return this.parsedNames.length > 1;
-                },
-
-                get batchCompletedCount() {
-                    return this.batchItems.filter(i => ['success', 'not_online', 'error', 'cancelled'].includes(i.status)).length;
-                },
-
-                get batchSuccessCount() {
-                    return this.batchItems.filter(i => i.status === 'success').length;
-                },
-
-                get batchFailedCount() {
-                    return this.batchItems.filter(i => ['not_online', 'error'].includes(i.status)).length;
-                },
-
-                get batchProgressPercent() {
-                    if (!this.batchItems.length) return 0;
-                    return Math.round((this.batchCompletedCount / this.batchItems.length) * 100);
                 },
 
                 showToast(msg) {
@@ -720,127 +549,16 @@
                     }
                 },
 
-                stopBatch() {
-                    if (confirm('Bạn có muốn dừng kick các tài khoản còn lại không?')) {
-                        this.batchStopRequested = true;
-                        this.showToast('Đang dừng tiến trình sau tài khoản hiện tại...');
-                    }
-                },
-
-                resetBatch(shouldReload = false) {
-                    this.batchItems = [];
-                    this.batchActive = false;
-                    this.batchDone = false;
-                    this.batchStopRequested = false;
-                    this.batchCountdown = 0;
-                    this.batchCurrentIndex = -1;
-                    if (shouldReload) {
-                        window.location.reload();
-                    }
-                },
-
-                async startBatch() {
-                    const names = this.parsedNames;
-                    if (names.length === 0) return;
-
-                    const confirmText = `Bạn có chắc chắn muốn kick tuần tự ${names.length} tài khoản? Trình duyệt sẽ gửi lệnh và chờ 2.0 giây giữa mỗi tài khoản (hoạt động trực tiếp trên hosting không cần queue).`;
-                    if (!confirm(confirmText)) {
-                        return;
-                    }
-
-                    this.batchActive = true;
-                    this.batchDone = false;
-                    this.batchStopRequested = false;
-                    this.batchCountdown = 0;
-                    this.batchCurrentIndex = 0;
-                    this.lastResult = null;
-
-                    this.batchItems = names.map((name, index) => ({
-                        index: index + 1,
-                        name: name,
-                        status: 'pending',
-                        msg: 'Đang trong danh sách chờ...',
-                        gs_id: null,
-                        code: null,
-                    }));
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-                    for (let i = 0; i < this.batchItems.length; i++) {
-                        if (this.batchStopRequested) {
-                            for (let j = i; j < this.batchItems.length; j++) {
-                                this.batchItems[j].status = 'cancelled';
-                                this.batchItems[j].msg = 'Đã dừng theo yêu cầu';
-                            }
-                            break;
-                        }
-
-                        this.batchCurrentIndex = i;
-                        const item = this.batchItems[i];
-                        item.status = 'running';
-                        item.msg = 'Đang gọi API kiểm tra 8 cụm GameServer...';
-
-                        try {
-                            const response = await fetch('{{ route('admin.game-kicks.store') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': csrfToken
-                                },
-                                body: JSON.stringify({
-                                    type: this.form.type,
-                                    name: item.name,
-                                    reason: this.form.reason
-                                })
-                            });
-
-                            const data = await response.json();
-                            item.code = data.code;
-                            item.gs_id = data.log?.gs_id || null;
-
-                            if (data.code === '1') {
-                                item.status = 'success';
-                                item.msg = (data.msg || 'Đã kick thành công') + (data.log?.gs_id ? ` (GS #${data.log.gs_id})` : '');
-                            } else if (data.code === '0') {
-                                item.status = 'pending';
-                                item.msg = data.msg || 'GameServer đang xử lý (Pending)';
-                            } else {
-                                item.status = 'not_online';
-                                item.msg = data.msg || 'Không online hoặc không tìm thấy';
-                            }
-                        } catch (err) {
-                            item.status = 'error';
-                            item.msg = 'Lỗi kết nối: ' + (err.message || 'Không có phản hồi');
-                        }
-
-                        // Nếu còn item tiếp theo và admin không bấm dừng -> Chờ 2s giãn cách chống rate limit
-                        if (i < this.batchItems.length - 1 && !this.batchStopRequested) {
-                            for (let c = 2; c > 0; c--) {
-                                this.batchCountdown = c;
-                                if (this.batchStopRequested) break;
-                                await new Promise(r => setTimeout(r, 1000));
-                            }
-                            this.batchCountdown = 0;
-                        }
-                    }
-
-                    this.batchActive = false;
-                    this.batchDone = true;
-                    this.showToast(`Hoàn thành: ${this.batchSuccessCount} thành công, ${this.batchFailedCount} không online/lỗi.`);
-                },
-
                 async submitKick() {
                     const names = this.parsedNames;
                     if (names.length === 0) return;
 
-                    // Nếu có từ 2 tài khoản trở lên -> Chạy tiến trình kick tuần tự trực tiếp
-                    if (this.isBatch) {
-                        return this.startBatch();
-                    }
+                    const isBatch = this.isBatch;
+                    const confirmMsg = isBatch
+                        ? `Bạn có chắc chắn muốn đưa ${names.length} tài khoản vào hàng đợi Queue VPS để tự động kick ngầm?`
+                        : `Bạn có chắc chắn muốn KICK ${this.form.type === 'account' ? 'tài khoản' : 'nhân vật'} "${names[0]}" khỏi toàn bộ GameServer?`;
 
-                    // Trường hợp 1 tài khoản đơn lẻ
-                    if (!confirm(`Bạn có chắc chắn muốn KICK ${this.form.type === 'account' ? 'tài khoản' : 'nhân vật'} "${names[0]}" khỏi toàn bộ GameServer?`)) {
+                    if (!confirm(confirmMsg)) {
                         return;
                     }
 
@@ -862,11 +580,14 @@
                         const data = await response.json();
                         this.lastResult = data;
 
-                        // Reload page sau khi nhận kết quả để cập nhật bảng lịch sử
-                        if (data.ok || data.code === '1') {
+                        if (data.ok || data.code === '1' || data.is_batch) {
+                            this.showToast(data.msg || 'Đã gửi yêu cầu thành công!');
+                            // Reload trang sau 1.5s để hiển thị các bản ghi trong danh sách lịch sử
                             setTimeout(() => {
                                 window.location.reload();
                             }, 1500);
+                        } else {
+                            this.showToast(data.msg || 'Xử lý hoàn tất');
                         }
                     } catch (err) {
                         this.lastResult = {

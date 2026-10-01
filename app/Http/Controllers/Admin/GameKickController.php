@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GameKickLog;
-use App\Models\Setting;
 use App\Services\GameKickService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

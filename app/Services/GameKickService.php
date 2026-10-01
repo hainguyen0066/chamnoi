@@ -132,6 +132,11 @@ class GameKickService
                 'raw_response' => $data,
             ]);
 
+            // Nếu GameServer trả về pending (code = '0') và có id, tự động truy vấn status để lấy kết quả cuối cùng
+            if ($code === '0' && !empty($data['id'])) {
+                return $this->resolvePendingStatus($kickLog);
+            }
+
             return [
                 'ok'     => $code === '1',
                 'code'   => $code,
@@ -244,6 +249,154 @@ class GameKickService
                 'result' => 'server_error',
                 'msg'    => 'Lỗi kết nối tra cứu trạng thái: ' . $e->getMessage(),
                 'log'    => $kickLog,
+            ];
+        }
+    }
+
+    /**
+     * Tự động tra cứu lại trạng thái cho đến khi nhận được kết quả cuối cùng (thành công hoặc offline/fail),
+     * tránh để bản ghi bị treo ở trạng thái "đang xử lý" (pending / code = 0).
+     *
+     * @param GameKickLog $kickLog
+     * @param int $maxAttempts Số lần thử lại tối đa (mỗi lần chờ GameServer 10s)
+     * @return array{ok: bool, code: string, result: string, msg: string, log: GameKickLog}
+     */
+    public function resolvePendingStatus(GameKickLog $kickLog, int $maxAttempts = 3): array
+    {
+        $attempt = 0;
+        $lastResult = [
+            'ok'     => false,
+            'code'   => '0',
+            'result' => 'pending',
+            'msg'    => $kickLog->msg,
+            'log'    => $kickLog,
+        ];
+
+        while ($attempt < $maxAttempts) {
+            $attempt++;
+            // Chờ 2 giây để GameServer có thời gian ngắt kết nối nhân vật trong game
+            sleep(2);
+
+            $lastResult = $this->checkStatus($kickLog, wait: 10);
+
+            // Nếu đã có kết quả cuối cùng (khác 0: 1 = success, 2 = offline/lỗi), trả về ngay
+            if ($lastResult['code'] !== '0') {
+                return $lastResult;
+            }
+        }
+
+        return $lastResult;
+    }
+
+    /**
+     * Thực thi lệnh kick cho một bản ghi GameKickLog đã tồn tại (dùng trong Queue Job),
+     * tự động chờ và truy vấn trạng thái cuối cùng để không bị treo 'pending'.
+     *
+     * @param GameKickLog $kickLog
+     * @return array{ok: bool, code: string, result: string, msg: string, log: GameKickLog}
+     */
+    public function executeForLog(GameKickLog $kickLog): array
+    {
+        $type = in_array($kickLog->type, ['account', 'role'], true) ? $kickLog->type : 'account';
+        $name = trim($kickLog->name);
+        $by = str_replace('|', '_', trim($kickLog->by ?: 'admin'));
+        $reason = str_replace('|', ' ', trim((string) $kickLog->reason));
+
+        $nonce = bin2hex(random_bytes(8));
+        $ts = (string) time();
+
+        $signPayload = "kick|{$type}|{$name}|{$nonce}|{$by}|{$reason}|{$ts}";
+        $sign = hash_hmac('sha256', $signPayload, $this->key);
+
+        $postData = [
+            'type'   => $type,
+            'name'   => $name,
+            'by'     => $by,
+            'reason' => $reason,
+            'nonce'  => $nonce,
+            'ts'     => $ts,
+            'sign'   => $sign,
+            'wait'   => 12,
+        ];
+
+        $kickLog->update([
+            'nonce' => $nonce,
+            'msg'   => 'Đang gửi lệnh tới GameServer...',
+        ]);
+
+        try {
+            $response = Http::timeout($this->timeout)
+                ->asForm()
+                ->post($this->kickUrl, $postData);
+
+            $data = $response->json();
+
+            if (!is_array($data)) {
+                $rawBody = $response->body();
+                Log::warning('GameKick API non-json response', ['body' => $rawBody]);
+
+                $kickLog->update([
+                    'code'         => '2',
+                    'result'       => 'server_error',
+                    'msg'          => 'Máy chủ phản hồi không hợp lệ: ' . mb_substr($rawBody, 0, 150),
+                    'raw_response' => ['raw_body' => $rawBody],
+                ]);
+
+                return [
+                    'ok'     => false,
+                    'code'   => '2',
+                    'result' => 'server_error',
+                    'msg'    => $kickLog->msg,
+                    'log'    => $kickLog->fresh(),
+                ];
+            }
+
+            $code   = (string) ($data['code'] ?? '2');
+            $result = (string) ($data['result'] ?? 'unknown');
+            $msg    = (string) ($data['msg'] ?? 'Không có thông báo');
+
+            $kickLog->update([
+                'api_id'       => isset($data['id']) ? (int) $data['id'] : null,
+                'code'         => $code,
+                'result'       => $result,
+                'msg'          => $msg,
+                'gs_id'        => isset($data['gs_id']) ? (int) $data['gs_id'] : null,
+                'role_name'    => $data['role_name'] ?? null,
+                'note'         => $data['note'] ?? null,
+                'target'       => $data['target'] ?? null,
+                'reused'       => !empty($data['reused']),
+                'raw_response' => $data,
+            ]);
+
+            // Tự động phân giải trạng thái cuối cùng nếu đang pending (code = '0')
+            if ($code === '0' && !empty($data['id'])) {
+                return $this->resolvePendingStatus($kickLog);
+            }
+
+            return [
+                'ok'     => $code === '1',
+                'code'   => $code,
+                'result' => $result,
+                'msg'    => $msg,
+                'log'    => $kickLog->fresh(),
+            ];
+
+        } catch (\Throwable $e) {
+            Log::error('GameKick executeForLog Exception: ' . $e->getMessage());
+
+            $kickLog->update([
+                'code'         => '2',
+                'result'       => 'server_error',
+                'msg'          => 'Lỗi kết nối máy chủ API: ' . $e->getMessage(),
+                'raw_response' => ['error' => $e->getMessage()],
+            ]);
+
+            return [
+                'ok'     => false,
+                'code'   => '2',
+                'result' => 'server_error',
+                'msg'    => $kickLog->msg,
+                'log'    => $kickLog->fresh(),
             ];
         }
     }
