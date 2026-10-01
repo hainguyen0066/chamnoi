@@ -126,7 +126,7 @@ class AccountController extends Controller
         }
 
         $newStatus = $account->status === 'active' ? 'locked' : 'active';
-        $account->update(['status' => $newStatus]);
+        $account->forceFill(['status' => $newStatus])->save();
 
         $msg = $newStatus === 'locked' ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản';
         return back()->with('status', "{$msg} [{$account->email}] thành công!");
