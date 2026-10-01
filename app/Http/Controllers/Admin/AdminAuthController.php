@@ -28,13 +28,27 @@ class AdminAuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required'],
+            'email'    => ['required', 'string'],
+            'password' => ['required', 'string'],
         ], [
             'email.required'    => 'Vui lòng nhập email.',
-            'email.email'       => 'Email không đúng định dạng.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
         ]);
+
+        $credentials['email'] = strtolower(trim($credentials['email']));
+        $credentials['password'] = trim($credentials['password']);
+
+        // Đồng bộ nếu tài khoản có trong bảng users với quyền admin nhưng chưa có ở admins
+        if (! Admin::where('email', $credentials['email'])->exists()) {
+            $user = \App\Models\User::where('email', $credentials['email'])->where('role', 'admin')->first();
+            if ($user && \Illuminate\Support\Facades\Hash::check($credentials['password'], $user->password)) {
+                Admin::create([
+                    'name'     => $user->name,
+                    'email'    => $user->email,
+                    'password' => $user->password,
+                ]);
+            }
+        }
 
         // Kiểm tra thông tin đăng nhập đúng hay sai
         if (! Auth::guard('admin')->validate($credentials)) {
