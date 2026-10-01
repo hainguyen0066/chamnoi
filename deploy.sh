@@ -16,7 +16,7 @@ npm run build
 
 # 2. Push lên GitHub (nếu có commit mới)
 echo "🐙 [2/4] Kiểm tra và đẩy code lên GitHub..."
-if ! git diff-index --quiet HEAD --; then
+if [ -n "$(git status --porcelain)" ]; then
     COMMIT_MSG="${1:-update: $(date '+%Y-%m-%d %H:%M:%S')}"
     git add .
     git commit -m "$COMMIT_MSG"
