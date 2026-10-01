@@ -1,58 +1,73 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Game API Management Panel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Hệ thống quản lý tài trị, xác thực đa yếu tố (2FA) và tích hợp GameServer Kick API.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tính Năng Chính
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. **Kick Người Chơi (GameServer API v2)**
+   - Kick tài khoản hoặc nhân vật theo thời gian thực kết nối trực tiếp GameServer qua HMAC-SHA256 signature.
+   - Hỗ trợ xử lý hàng loạt (Batch Kick) theo danh sách dòng:
+     - Tự động chạy nền qua Queue Worker hoặc xử lý trực tiếp (đồng bộ) phù hợp cho cả VPS lẫn Shared Hosting.
+     - Kiểm tra trạng thái xử lý trực tiếp theo thời gian thực (Live Status Checking).
+   - Nhật ký lịch sử Kick chi tiết (`game_kick_logs`), hiển thị mã phản hồi HTTP, payload và trạng thái thành công/thất bại.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2. **Quản Lý Tài Khoản (Admin & User)**
+   - Danh sách tài khoản hệ thống với bộ lọc vai trò (Admin / User) và trạng thái (Active / Locked).
+   - Thêm tài khoản mới, phân quyền truy cập.
+   - Bật / tắt khóa tài khoản nhanh chóng.
+   - Xóa tài khoản an toàn với cơ chế chặn tự xóa chính mình.
 
-## Learning Laravel
+3. **Bảo Mật 2FA (Two-Factor Authentication)**
+   - Tích hợp Google Authenticator (TOTP chuẩn RFC 6238).
+   - Hỗ trợ mã khôi phục dự phòng (Recovery Codes) khi mất thiết bị.
+   - Middleware và Flow đăng nhập 2 bước bảo vệ toàn diện bảng quản trị.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Cấu Hình Môi Trường (.env)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+```env
+APP_NAME="GAME API PANEL"
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://your-domain.com
 
-## Agentic Development
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=game_api_panel
+DB_USERNAME=root
+DB_PASSWORD=
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+# Session
+SESSION_DRIVER=database
+SESSION_COOKIE=game_admin_session
 
-```bash
-composer require laravel/boost --dev
+# Queue (database hoặc sync tùy theo hosting/vps)
+QUEUE_CONNECTION=database
 
-php artisan boost:install
+# GameServer Kick API
+GAME_KICK_API_URL=http://103.206.216.8:8090/v2/kick.php
+GAME_KICK_STATUS_API_URL=http://103.206.216.8:8090/v2/kick_status.php
+GAME_KICK_KEY=your_secret_key_here
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Cài Đặt & Khởi Chạy
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+# 1. Cài đặt thư viện
+composer install --no-dev --optimize-autoloader
+npm install && npm run build
 
-## Code of Conduct
+# 2. Khởi tạo cấu hình và Database
+php artisan key:generate
+php artisan migrate --force
+php artisan db:seed --class=AdminUserSeeder
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 3. Chạy Queue Worker (nếu dùng hàng đợi)
+php artisan queue:work --tries=3
+```

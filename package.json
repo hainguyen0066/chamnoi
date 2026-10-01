@@ -1,5 +1,6 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
+    "name": "game-api-panel",
     "private": true,
     "type": "module",
     "scripts": {
@@ -19,9 +20,5 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
-    },
-    "dependencies": {
-        "chart.js": "^4.5.1",
-        "tinymce": "^8.8.2"
     }
 }

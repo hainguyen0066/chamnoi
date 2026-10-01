@@ -3,12 +3,11 @@
 namespace App\Services;
 
 use App\Models\GameKickLog;
-use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service gọi API Kick Người Chơi (Tình Trong Thiên Hạ Mobile v2).
+ * Service gọi API Kick Người Chơi GameServer v2.
  */
 class GameKickService
 {

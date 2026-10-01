@@ -24,7 +24,7 @@ class TwoFactorController extends Controller
     {
         /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
-        $appName = config('app.name', 'VO LAM API PANEL');
+        $appName = config('app.name', 'GAME API PANEL');
 
         $qrCodeSvg = null;
         $secret = null;

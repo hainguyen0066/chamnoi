@@ -17,14 +17,16 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        $defaultEmail = env('DEFAULT_ADMIN_EMAIL', 'admin@example.com');
+
         // Tạo tài khoản Admin cho bảng admins (dùng cho guard 'admin')
-        $admin = Admin::firstOrNew(['email' => 'admin@volam.local']);
+        $admin = Admin::firstOrNew(['email' => $defaultEmail]);
         $admin->name = 'Quản trị viên';
         $admin->password = Hash::make('password123');
         $admin->save();
 
         // Tạo tài khoản User cho bảng users (dùng cho guard 'web')
-        $user = User::firstOrNew(['email' => 'admin@volam.local']);
+        $user = User::firstOrNew(['email' => $defaultEmail]);
         $user->name = 'Quản trị viên';
         $user->password = Hash::make('password123');
         $user->email_verified_at = now();
