@@ -21,6 +21,15 @@ class GameKickController extends Controller
      */
     public function index(Request $request): View
     {
+        // Tự động giải phóng các lệnh pending quá 2 phút để không bị kẹt hàng đợi
+        GameKickLog::where('code', '0')
+            ->where('created_at', '<=', now()->subMinutes(2))
+            ->update([
+                'code'   => '2',
+                'result' => 'timeout',
+                'msg'    => 'Hết thời gian chờ phản hồi từ GameServer (tự động kết thúc)',
+            ]);
+
         $stats = [
             'total'   => GameKickLog::count(),
             'success' => GameKickLog::where('code', '1')->count(),
@@ -167,6 +176,94 @@ class GameKickController extends Controller
         }
 
         return back()->with($result['code'] === '0' ? 'status' : 'error', $result['msg']);
+    }
+
+    /**
+     * Hủy toàn bộ các lệnh đang chờ trong hàng đợi.
+     */
+    public function cancelAll(Request $request): JsonResponse|RedirectResponse
+    {
+        $pendingLogs = GameKickLog::where('code', '0')->get();
+        $count = $pendingLogs->count();
+
+        if ($count > 0) {
+            GameKickLog::where('code', '0')->update([
+                'code'   => '2',
+                'result' => 'cancelled',
+                'msg'    => 'Đã hủy hàng đợi bởi Quản trị viên',
+            ]);
+
+            // Dọn dẹp các jobs đang chờ trong hàng đợi database nếu có
+            try {
+                \Illuminate\Support\Facades\DB::table('jobs')
+                    ->where('payload', 'like', '%ProcessGameKickBatch%')
+                    ->delete();
+            } catch (\Throwable $e) {
+                // Ignore if jobs table structure differs
+            }
+        }
+
+        $msg = $count > 0 
+            ? "Đã hủy thành công {$count} lệnh đang chờ trong hàng đợi!" 
+            : "Hiện không có lệnh nào đang chờ trong hàng đợi.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'ok'    => true,
+                'count' => $count,
+                'msg'   => $msg,
+            ]);
+        }
+
+        return back()->with('status', $msg);
+    }
+
+    /**
+     * Hủy một lệnh kick cụ thể đang chờ.
+     */
+    public function cancel(Request $request, GameKickLog $kickLog): JsonResponse|RedirectResponse
+    {
+        if ($kickLog->code === '0') {
+            $kickLog->update([
+                'code'   => '2',
+                'result' => 'cancelled',
+                'msg'    => 'Đã hủy bởi Quản trị viên',
+            ]);
+            $msg = "Đã hủy lệnh kick cho: {$kickLog->name}";
+        } else {
+            $msg = "Lệnh này đã hoàn tất trước đó, không cần hủy.";
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'ok'  => true,
+                'msg' => $msg,
+                'log' => $kickLog->fresh(),
+            ]);
+        }
+
+        return back()->with('status', $msg);
+    }
+
+    /**
+     * Lấy trạng thái số lượng lệnh đang chờ (dùng cho AJAX polling ngầm không reload trang).
+     */
+    public function queueStatus(): JsonResponse
+    {
+        // Tự động giải phóng các lệnh pending quá 2 phút
+        GameKickLog::where('code', '0')
+            ->where('created_at', '<=', now()->subMinutes(2))
+            ->update([
+                'code'   => '2',
+                'result' => 'timeout',
+                'msg'    => 'Hết thời gian chờ phản hồi từ GameServer (tự động kết thúc)',
+            ]);
+
+        $pending = GameKickLog::where('code', '0')->count();
+
+        return response()->json([
+            'pending' => $pending,
+        ]);
     }
 }
 

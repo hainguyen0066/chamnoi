@@ -259,24 +259,44 @@
 
         {{-- Live Queue In-Progress Banner --}}
         @if ($stats['pending'] > 0)
-            <div class="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 flex items-center justify-between shadow-xs">
+            <div class="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                 <div class="flex items-center gap-3">
                     <div class="relative flex items-center justify-center">
-                        <svg class="animate-spin w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24">
+                        <svg class="animate-spin w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
                     </div>
-                    <div class="text-xs">
-                        <span class="font-bold">Đang có {{ $stats['pending'] }} lệnh trong Hàng Đợi (Queue)...</span>
-                        <span class="text-amber-700 ml-1">Hệ thống đang tự động kick ngầm giãn cách 2s/acc.</span>
+                    <div>
+                        <div class="text-sm font-bold text-amber-950 flex items-center gap-2">
+                            <span>Đang có {{ $stats['pending'] }} lệnh trong Hàng Đợi (Queue)</span>
+                            <span class="text-[11px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md font-medium">
+                                Xử lý ngầm (1 lần/acc)
+                            </span>
+                        </div>
+                        <div class="text-xs text-amber-800 mt-0.5">
+                            Hệ thống đang kick từng tài khoản (giãn cách 2s giữa các tài khoản khác nhau để tránh rate limit). Không retry nếu thất bại.
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-[11px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1.5 font-medium">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
-                        Đang tự động cập nhật...
-                    </span>
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                    <button type="button"
+                            @click="cancelAllQueue()"
+                            :disabled="cancellingAll"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg shadow-sm transition disabled:opacity-60 cursor-pointer">
+                        <template x-if="cancellingAll">
+                            <svg class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                        </template>
+                        <template x-if="!cancellingAll">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </template>
+                        <span x-text="cancellingAll ? 'Đang hủy...' : 'Hủy Toàn Bộ Hàng Đợi'"></span>
+                    </button>
                 </div>
             </div>
         @endif
@@ -398,6 +418,26 @@
 
                                 <td class="py-3 px-4 whitespace-nowrap text-right space-x-1">
                                     @if ($log->code === '0')
+                                        {{-- Nút Hủy lệnh đang chờ --}}
+                                        <button type="button"
+                                                @click="cancelSingle({{ $log->id }}, '{{ route('admin.game-kicks.cancel', $log) }}')"
+                                                :disabled="cancellingIds.includes({{ $log->id }})"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium rounded-md shadow-xs transition disabled:opacity-60 cursor-pointer"
+                                                title="Hủy lệnh này khỏi hàng đợi">
+                                            <template x-if="cancellingIds.includes({{ $log->id }})">
+                                                <svg class="animate-spin w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                </svg>
+                                            </template>
+                                            <template x-if="!cancellingIds.includes({{ $log->id }})">
+                                                <svg class="w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </template>
+                                            <span x-text="cancellingIds.includes({{ $log->id }}) ? 'Đang hủy...' : 'Hủy'"></span>
+                                        </button>
+
                                         {{-- Nút Tra cứu lại cho Pending với hiệu ứng xoay --}}
                                         <button type="button"
                                                 @click="checkStatus({{ $log->id }}, '{{ route('admin.game-kicks.status', $log) }}')"
@@ -461,14 +501,6 @@
         function gameKickApp() {
             return {
                 hasPending: {{ $stats['pending'] > 0 ? 'true' : 'false' }},
-                init() {
-                    // Nếu đang có tác vụ trong Queue (pending), tự động làm mới trang mỗi 3 giây để cập nhật kết quả
-                    if (this.hasPending) {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 3000);
-                    }
-                },
                 form: {
                     type: 'account',
                     name: '',
@@ -478,7 +510,51 @@
                 isReloading: false,
                 toastMessage: '',
                 checkingIds: [],
+                cancellingIds: [],
+                cancellingAll: false,
                 lastResult: null,
+                pollTimer: null,
+                pollCount: 0,
+
+                init() {
+                    // Nếu đang có tác vụ trong Queue (pending), kiểm tra ngầm nhẹ nhàng qua API, KHÔNG ép reload toàn trang
+                    if (this.hasPending) {
+                        this.startQueuePolling();
+                    }
+                },
+
+                startQueuePolling() {
+                    if (this.pollTimer) clearInterval(this.pollTimer);
+                    this.pollCount = 0;
+
+                    this.pollTimer = setInterval(async () => {
+                        this.pollCount++;
+                        // Dừng sau 20 lần (khoảng 60 giây) nếu không có cập nhật để tránh tốn tài nguyên
+                        if (this.pollCount > 20) {
+                            clearInterval(this.pollTimer);
+                            return;
+                        }
+
+                        try {
+                            const res = await fetch('{{ route('admin.game-kicks.queue-status') }}', {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            const data = await res.json();
+
+                            // Khi hàng đợi đã được xử lý xong hoàn toàn (pending = 0), reload 1 lần duy nhất để xem kết quả
+                            if (data.pending === 0 && this.hasPending) {
+                                clearInterval(this.pollTimer);
+                                this.hasPending = false;
+                                this.showToast('✅ Hàng đợi đã xử lý xong!');
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1000);
+                            }
+                        } catch (e) {
+                            // Bỏ qua lỗi tạm thời của request ngầm
+                        }
+                    }, 3000);
+                },
 
                 get parsedNames() {
                     if (!this.form.name) return [];
@@ -549,13 +625,78 @@
                     }
                 },
 
+                async cancelAllQueue() {
+                    if (!confirm('Bạn có chắc chắn muốn HỦY TOÀN BỘ các lệnh đang chờ trong hàng đợi không?')) {
+                        return;
+                    }
+
+                    this.cancellingAll = true;
+                    this.showToast('Đang gửi yêu cầu hủy toàn bộ hàng đợi...');
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const response = await fetch('{{ route('admin.game-kicks.cancel-all') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+
+                        const data = await response.json();
+                        this.showToast(data.msg || 'Đã hủy toàn bộ hàng đợi');
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    } catch (err) {
+                        this.showToast('❌ Lỗi khi hủy hàng đợi: ' + (err.message || 'Không có phản hồi'));
+                    } finally {
+                        this.cancellingAll = false;
+                    }
+                },
+
+                async cancelSingle(logId, url) {
+                    if (!confirm('Bạn có chắc chắn muốn hủy lệnh kick đang chờ này không?')) {
+                        return;
+                    }
+
+                    if (this.cancellingIds.includes(logId)) return;
+                    this.cancellingIds.push(logId);
+                    this.showToast('Đang hủy lệnh...');
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+
+                        const data = await response.json();
+                        this.showToast(data.msg || 'Đã hủy lệnh kick');
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    } catch (err) {
+                        this.showToast('❌ Lỗi khi hủy: ' + (err.message || 'Không có phản hồi'));
+                    } finally {
+                        this.cancellingIds = this.cancellingIds.filter(id => id !== logId);
+                    }
+                },
+
                 async submitKick() {
                     const names = this.parsedNames;
                     if (names.length === 0) return;
 
                     const isBatch = this.isBatch;
                     const confirmMsg = isBatch
-                        ? `Bạn có chắc chắn muốn đưa ${names.length} tài khoản vào hàng đợi Queue VPS để tự động kick ngầm?`
+                        ? `Bạn có chắc chắn muốn đưa ${names.length} tài khoản vào hàng đợi Queue để tự động kick ngầm?`
                         : `Bạn có chắc chắn muốn KICK ${this.form.type === 'account' ? 'tài khoản' : 'nhân vật'} "${names[0]}" khỏi toàn bộ GameServer?`;
 
                     if (!confirm(confirmMsg)) {
@@ -582,10 +723,10 @@
 
                         if (data.ok || data.code === '1' || data.is_batch) {
                             this.showToast(data.msg || 'Đã gửi yêu cầu thành công!');
-                            // Reload trang sau 1.5s để hiển thị các bản ghi trong danh sách lịch sử
+                            // Reload trang sau 1s để hiển thị bản ghi mới
                             setTimeout(() => {
                                 window.location.reload();
-                            }, 1500);
+                            }, 1000);
                         } else {
                             this.showToast(data.msg || 'Xử lý hoàn tất');
                         }

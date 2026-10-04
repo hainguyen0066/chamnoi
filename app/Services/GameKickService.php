@@ -254,38 +254,37 @@ class GameKickService
     }
 
     /**
-     * Tự động tra cứu lại trạng thái cho đến khi nhận được kết quả cuối cùng (thành công hoặc offline/fail),
-     * tránh để bản ghi bị treo ở trạng thái "đang xử lý" (pending / code = 0).
+     * Tra cứu lại trạng thái đúng 1 lần nếu GameServer trả về pending (code = 0).
+     * Nếu sau 1 lần vẫn chưa có kết quả cuối cùng thì đánh dấu kết thúc lệnh (không retry lặp đi lặp lại).
      *
      * @param GameKickLog $kickLog
-     * @param int $maxAttempts Số lần thử lại tối đa (mỗi lần chờ GameServer 10s)
      * @return array{ok: bool, code: string, result: string, msg: string, log: GameKickLog}
      */
-    public function resolvePendingStatus(GameKickLog $kickLog, int $maxAttempts = 3): array
+    public function resolvePendingStatus(GameKickLog $kickLog): array
     {
-        $attempt = 0;
-        $lastResult = [
-            'ok'     => false,
-            'code'   => '0',
-            'result' => 'pending',
-            'msg'    => $kickLog->msg,
-            'log'    => $kickLog,
-        ];
+        // Chờ 1 giây ngắn để GameServer hoàn tất
+        sleep(1);
 
-        while ($attempt < $maxAttempts) {
-            $attempt++;
-            // Chờ 2 giây để GameServer có thời gian ngắt kết nối nhân vật trong game
-            sleep(2);
+        $result = $this->checkStatus($kickLog, wait: 5);
 
-            $lastResult = $this->checkStatus($kickLog, wait: 10);
+        // Nếu GameServer vẫn trả về pending (code = '0'), kết thúc lệnh ngay thành thất bại (timeout)
+        if ($result['code'] === '0') {
+            $kickLog->update([
+                'code'   => '2',
+                'result' => 'timeout',
+                'msg'    => 'GameServer chưa xử lý xong kịp thời (hết thời gian chờ). Đã kết thúc lệnh.',
+            ]);
 
-            // Nếu đã có kết quả cuối cùng (khác 0: 1 = success, 2 = offline/lỗi), trả về ngay
-            if ($lastResult['code'] !== '0') {
-                return $lastResult;
-            }
+            return [
+                'ok'     => false,
+                'code'   => '2',
+                'result' => 'timeout',
+                'msg'    => $kickLog->msg,
+                'log'    => $kickLog->fresh(),
+            ];
         }
 
-        return $lastResult;
+        return $result;
     }
 
     /**

@@ -32,6 +32,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // 1. Kick Người Chơi (GameServer API v2)
         Route::get('game-kicks', [GameKickController::class, 'index'])->name('game-kicks.index');
         Route::post('game-kicks', [GameKickController::class, 'kick'])->middleware('throttle:30,1')->name('game-kicks.store');
+        Route::get('game-kicks/queue-status', [GameKickController::class, 'queueStatus'])->name('game-kicks.queue-status');
+        Route::post('game-kicks/cancel-all', [GameKickController::class, 'cancelAll'])->name('game-kicks.cancel-all');
+        Route::post('game-kicks/{kickLog}/cancel', [GameKickController::class, 'cancel'])->name('game-kicks.cancel');
         Route::post('game-kicks/{kickLog}/status', [GameKickController::class, 'checkStatus'])->name('game-kicks.status');
 
         // 2. Quản lý Tài khoản (Đăng ký / Danh sách / Khóa / Xóa)

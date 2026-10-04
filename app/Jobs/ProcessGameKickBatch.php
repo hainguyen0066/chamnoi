@@ -19,9 +19,15 @@ class ProcessGameKickBatch implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Thời gian timeout cho toàn bộ job (ví dụ danh sách 30 acc * 4s = 120s).
+     * Chỉ chạy 1 lần duy nhất, tuyệt đối không tự động retry nếu có lỗi.
      */
-    public int $timeout = 600;
+    public int $tries = 1;
+    public int $maxExceptions = 1;
+
+    /**
+     * Thời gian timeout cho toàn bộ job.
+     */
+    public int $timeout = 300;
 
     /**
      * @param array<int> $logIds Danh sách ID của GameKickLog cần xử lý
@@ -41,15 +47,15 @@ class ProcessGameKickBatch implements ShouldQueue
                 continue;
             }
 
-            // Bỏ qua nếu lệnh đã có kết quả cuối cùng (thành công hoặc offline/thất bại)
-            if ($kickLog->code === '1' || ($kickLog->code === '2' && $kickLog->result !== 'server_error')) {
+            // Bỏ qua nếu lệnh đã có kết quả hoặc đã bị Quản trị viên hủy
+            if ($kickLog->code !== '0' || $kickLog->result === 'cancelled') {
                 continue;
             }
 
-            // Thực thi kick và tự động phân giải trạng thái cuối cùng (không bao giờ để pending)
+            // Thực thi kick đúng 1 lần (nếu fail thì thôi, không retry)
             $kickService->executeForLog($kickLog);
 
-            // Nếu còn mục tiếp theo, giãn cách 2 giây để không vượt quá 30 req/phút của GameServer
+            // Nếu còn mục tiếp theo, giãn cách 2 giây giữa các tài khoản khác nhau để tuân thủ 30 req/phút của GameServer
             if ($index < $total - 1) {
                 sleep(2);
             }
