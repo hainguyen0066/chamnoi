@@ -216,9 +216,11 @@
                                                         <button type="button" @click="copyText(role)" title="Sao chép" class="text-slate-400 hover:text-slate-700">
                                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                                         </button>
-                                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=role&name=' + encodeURIComponent(role)" title="Kick nhân vật này" class="text-rose-500 hover:text-rose-700">
-                                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                                                        </a>
+                                                        <button type="button" @click="kickDirectly('role', role)" :disabled="kickingTargets.includes(role)" :title="'Kick nhân vật ' + role + ' ngay'" class="text-rose-500 hover:text-rose-700 cursor-pointer disabled:opacity-50 inline-flex items-center gap-0.5">
+                                                            <svg x-show="kickingTargets.includes(role)" class="animate-spin w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                                            <svg x-show="!kickingTargets.includes(role) && !kickStatusMap[role]?.ok" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                            <span x-show="kickStatusMap[role]?.ok" class="text-[10px] text-emerald-600 font-bold" title="Đã kick thành công">✓</span>
+                                                        </button>
                                                     </span>
                                                 </template>
                                             </div>
@@ -234,19 +236,27 @@
                             <div class="flex items-center gap-2 shrink-0">
                                 <template x-if="resultsList[0].ok && resultsList[0].by === 'role' && resultsList[0].account">
                                     <div class="flex items-center gap-2">
-                                        <button type="button" @click="lookupReverse(resultsList[0].account)" class="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 text-xs font-semibold transition">
+                                        <button type="button" @click="lookupReverse(resultsList[0].account)" class="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 text-xs font-semibold transition cursor-pointer">
                                             Xem các NV khác của acc này
                                         </button>
-                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(resultsList[0].account)" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1">
-                                            Kick Acc này
-                                        </a>
+                                        <button type="button"
+                                                @click="kickDirectly('account', resultsList[0].account)"
+                                                :disabled="kickingTargets.includes(resultsList[0].account)"
+                                                class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1 cursor-pointer disabled:opacity-50">
+                                            <svg x-show="kickingTargets.includes(resultsList[0].account)" class="animate-spin w-3 h-3 text-rose-700" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                            <span x-text="kickingTargets.includes(resultsList[0].account) ? 'Đang kick...' : (kickStatusMap[resultsList[0].account]?.ok ? '✓ Đã Kick' : 'Kick Acc này ngay')"></span>
+                                        </button>
                                     </div>
                                 </template>
 
                                 <template x-if="resultsList[0].ok && resultsList[0].by === 'account'">
-                                    <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(resultsList[0].name)" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1">
-                                        Kick Acc này
-                                    </a>
+                                    <button type="button"
+                                            @click="kickDirectly('account', resultsList[0].name)"
+                                            :disabled="kickingTargets.includes(resultsList[0].name)"
+                                            class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1 cursor-pointer disabled:opacity-50">
+                                        <svg x-show="kickingTargets.includes(resultsList[0].name)" class="animate-spin w-3 h-3 text-rose-700" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                        <span x-text="kickingTargets.includes(resultsList[0].name) ? 'Đang kick...' : (kickStatusMap[resultsList[0].name]?.ok ? '✓ Đã Kick' : 'Kick Acc này ngay')"></span>
+                                    </button>
                                 </template>
                             </div>
                         </div>
@@ -315,16 +325,28 @@
                                             <td class="p-3 text-right">
                                                 <template x-if="item.account">
                                                     <div class="inline-flex items-center gap-1.5">
-                                                        <button type="button" @click="copyText(item.account)" class="text-xs text-sky-600 hover:text-sky-800 font-medium">Copy</button>
+                                                        <button type="button" @click="copyText(item.account)" class="text-xs text-sky-600 hover:text-sky-800 font-medium cursor-pointer">Copy</button>
                                                         <span class="text-slate-300">|</span>
-                                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(item.account)" class="text-xs text-rose-600 hover:text-rose-800 font-medium">Kick</a>
+                                                        <button type="button"
+                                                                @click="kickDirectly('account', item.account)"
+                                                                :disabled="kickingTargets.includes(item.account)"
+                                                                class="text-xs text-rose-600 hover:text-rose-800 font-semibold cursor-pointer disabled:opacity-50 inline-flex items-center gap-1">
+                                                            <svg x-show="kickingTargets.includes(item.account)" class="animate-spin w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                                            <span x-text="kickingTargets.includes(item.account) ? 'Đang kick...' : (kickStatusMap[item.account]?.ok ? '✓ Đã Kick' : 'Kick')"></span>
+                                                        </button>
                                                     </div>
                                                 </template>
                                                 <template x-if="!item.account && item.roles && item.roles.length > 0">
                                                     <div class="inline-flex items-center gap-1.5">
-                                                        <button type="button" @click="copyText(item.roles.join(', '))" class="text-xs text-sky-600 hover:text-sky-800 font-medium">Copy NV</button>
+                                                        <button type="button" @click="copyText(item.roles.join(', '))" class="text-xs text-sky-600 hover:text-sky-800 font-medium cursor-pointer">Copy NV</button>
                                                         <span class="text-slate-300">|</span>
-                                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(item.name)" class="text-xs text-rose-600 hover:text-rose-800 font-medium">Kick</a>
+                                                        <button type="button"
+                                                                @click="kickDirectly('account', item.name)"
+                                                                :disabled="kickingTargets.includes(item.name)"
+                                                                class="text-xs text-rose-600 hover:text-rose-800 font-semibold cursor-pointer disabled:opacity-50 inline-flex items-center gap-1">
+                                                            <svg x-show="kickingTargets.includes(item.name)" class="animate-spin w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                                            <span x-text="kickingTargets.includes(item.name) ? 'Đang kick...' : (kickStatusMap[item.name]?.ok ? '✓ Đã Kick' : 'Kick')"></span>
+                                                        </button>
                                                     </div>
                                                 </template>
                                             </td>
@@ -421,11 +443,13 @@
                                 <td class="p-3.5 text-slate-500 whitespace-nowrap" x-text="liveLog.admin_name"></td>
                                 <td class="p-3.5 text-right whitespace-nowrap">
                                     <template x-if="liveLog.account">
-                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(liveLog.account)"
-                                           class="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-semibold">
-                                            <span>Kick</span>
-                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                        </a>
+                                        <button type="button"
+                                                @click="kickDirectly('account', liveLog.account)"
+                                                :disabled="kickingTargets.includes(liveLog.account)"
+                                                class="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer disabled:opacity-50">
+                                            <svg x-show="kickingTargets.includes(liveLog.account)" class="animate-spin w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                            <span x-text="kickingTargets.includes(liveLog.account) ? 'Đang kick...' : (kickStatusMap[liveLog.account]?.ok ? '✓ Đã Kick' : 'Kick')"></span>
+                                        </button>
                                     </template>
                                 </td>
                             </tr>
@@ -468,11 +492,13 @@
                                 </td>
                                 <td class="p-3.5 text-right whitespace-nowrap">
                                     @if ($log->account)
-                                        <a href="{{ route('admin.game-kicks.index') }}?type=account&name={{ urlencode($log->account) }}"
-                                           class="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-semibold">
-                                            <span>Kick</span>
-                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                        </a>
+                                        <button type="button"
+                                                @click="kickDirectly('account', '{{ $log->account }}')"
+                                                :disabled="kickingTargets.includes('{{ $log->account }}')"
+                                                class="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-semibold cursor-pointer disabled:opacity-50">
+                                            <svg x-show="kickingTargets.includes('{{ $log->account }}')" class="animate-spin w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                            <span x-text="kickingTargets.includes('{{ $log->account }}') ? 'Đang kick...' : (kickStatusMap['{{ $log->account }}']?.ok ? '✓ Đã Kick' : 'Kick')"></span>
+                                        </button>
                                     @endif
                                 </td>
                             </tr>
@@ -507,6 +533,8 @@
                 resultsList: [],
                 newLiveLogs: [],
                 copiedAll: false,
+                kickingTargets: [],
+                kickStatusMap: {},
 
                 get parsedNames() {
                     if (!this.form.names) return [];
@@ -596,6 +624,47 @@
                     }).catch(() => {
                         prompt('Sao chép kết quả:', lines);
                     });
+                },
+
+                async kickDirectly(type, name) {
+                    if (!name || this.kickingTargets.includes(name)) return;
+                    const label = type === 'account' ? 'tài khoản' : 'nhân vật';
+                    if (!confirm(`Bạn có chắc chắn muốn KICK ${label} "${name}" ngay tại đây?`)) return;
+
+                    this.kickingTargets.push(name);
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('{{ route('admin.game-kicks.store') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: JSON.stringify({
+                                type: type,
+                                name: name,
+                                reason: 'Kick từ màn hình Tra Cứu',
+                            }),
+                        });
+
+                        const data = await res.json();
+                        const isSuccess = data.ok === true || data.code === '1';
+                        this.kickStatusMap[name] = {
+                            ok: isSuccess,
+                            msg: data.msg || data.result || (isSuccess ? 'Thành công' : 'Thất bại'),
+                        };
+
+                        if (isSuccess) {
+                            alert(`✅ Đã kick ${label} "${name}" thành công!`);
+                        } else {
+                            alert(`❌ Không thể kick "${name}": ${data.msg || data.result || 'Lỗi không xác định'}`);
+                        }
+                    } catch (e) {
+                        alert(`Lỗi kết nối máy chủ khi kick: ${e.message}`);
+                    } finally {
+                        this.kickingTargets = this.kickingTargets.filter(n => n !== name);
+                    }
                 }
             };
         }
