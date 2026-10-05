@@ -71,8 +71,8 @@ class GameLookupController extends Controller
         $adminId = $admin?->id;
 
         $rawNames = $validated['names'];
-        // Tách theo dòng hoặc dấu phẩy
-        $lines = preg_split('/[\r\n,]+/', $rawNames);
+        // Tách theo dòng, dấu phẩy hoặc dấu chấm phẩy
+        $lines = preg_split('/[\r\n,;]+/', $rawNames);
         $names = array_values(array_unique(array_filter(array_map('trim', $lines))));
 
         if (empty($names)) {

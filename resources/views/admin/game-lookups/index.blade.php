@@ -58,7 +58,7 @@
                     </div>
                     <div>
                         <h2 class="text-base font-bold text-slate-800">Tra Cứu: Tên Nhân Vật ⇄ Tài Khoản</h2>
-                        <p class="text-xs text-slate-500">Tra cứu trực tiếp từ GameServer API v2 (lookup.php)</p>
+                        <p class="text-xs text-slate-500">Tra cứu 1 hoặc nhiều tài khoản / nhân vật cùng lúc từ GameServer</p>
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                                 </div>
                                 <div>
                                     <div class="text-sm font-semibold">Tên Nhân Vật ➔ Tìm Tài Khoản</div>
-                                    <div class="text-xs text-slate-500 mt-0.5">Nhập tên nhân vật (có dấu), trả về tài khoản</div>
+                                    <div class="text-xs text-slate-500 mt-0.5">Nhập tên nhân vật (có dấu), trả về tài khoản sở hữu</div>
                                 </div>
                             </div>
                         </label>
@@ -95,32 +95,57 @@
                                 </div>
                                 <div>
                                     <div class="text-sm font-semibold">Tài Khoản ➔ Tìm Các Nhân Vật</div>
-                                    <div class="text-xs text-slate-500 mt-0.5">Nhập tài khoản, trả về danh sách nhân vật</div>
+                                    <div class="text-xs text-slate-500 mt-0.5">Nhập tài khoản, trả về danh sách tất cả nhân vật</div>
                                 </div>
                             </div>
                         </label>
                     </div>
                 </div>
 
-                {{-- Input Field --}}
+                {{-- Input Field (Hỗ trợ 1 hoặc nhiều mục) --}}
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                        <span x-text="form.by === 'role' ? 'Tên Nhân Vật Cần Tra' : 'Tên Tài Khoản Cần Tra'"></span>
-                        <span class="text-rose-500">*</span>
-                    </label>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            <span x-text="form.by === 'role' ? 'Tên Nhân Vật Cần Tra' : 'Tên Tài Khoản Cần Tra'"></span>
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <span class="text-[11px] text-slate-400">Nhập 1 tên hoặc nhiều tên phân cách bằng dấu phẩy <code>,</code> hoặc xuống dòng</span>
+                    </div>
 
                     <div class="relative">
-                        <input
-                            type="text"
+                        <textarea
                             x-model="form.names"
-                            :placeholder="form.by === 'role' ? 'Nhập tên nhân vật (ví dụ: Độc_Cô, Long Ngũ)...' : 'Nhập tài khoản (ví dụ: dang01234, 0868465426)...'"
-                            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 text-slate-800 placeholder-slate-400 font-medium text-sm transition"
+                            :rows="parsedNames.length > 2 ? 4 : 2"
+                            :placeholder="form.by === 'role' ? 'Vd: Độc_Cô hoặc nhiều tên: Độc_Cô, Long Ngũ, Dương Quá...' : 'Vd: dang01234 hoặc nhiều tài khoản: dang01234, 0868465426...'"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 text-slate-800 placeholder-slate-400 font-medium text-sm transition resize-y"
                             required
-                        >
-                        <button type="button" @click="form.names = ''" x-show="form.names" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 text-xs">
-                            ✕
+                        ></textarea>
+                        <button type="button" @click="form.names = ''" x-show="form.names" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-1 text-xs">
+                            ✕ Xoá
                         </button>
                     </div>
+
+                    {{-- Preview Chips khi phát hiện nhiều mục --}}
+                    <template x-if="parsedNames.length > 1">
+                        <div class="mt-2.5 p-3 rounded-xl bg-slate-50 border border-sky-200">
+                            <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1.5">
+                                <span class="flex items-center gap-1.5 text-sky-700">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                    </svg>
+                                    Đã nhận diện <strong x-text="parsedNames.length"></strong> mục cần tra cứu
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                                <template x-for="(nameItem, idx) in parsedNames" :key="idx">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-mono font-medium bg-white border border-slate-200 text-slate-800 shadow-2xs">
+                                        <span class="text-sky-600 font-bold" x-text="'#' + (idx + 1)"></span>
+                                        <span x-text="nameItem"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 {{-- Submit Button --}}
@@ -128,7 +153,7 @@
                     <button
                         type="submit"
                         :disabled="loading || !form.names.trim()"
-                        class="px-6 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 shadow-md shadow-sky-600/20 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        class="px-6 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 shadow-md shadow-sky-600/20 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                     >
                         <svg x-show="loading" class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -137,54 +162,55 @@
                         <svg x-show="!loading" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
-                        <span x-text="loading ? 'Đang tra cứu...' : 'Tra Cứu Ngay'"></span>
+                        <span x-text="loading ? 'Đang tra cứu từ GameServer...' : (parsedNames.length > 1 ? 'Tra Cứu ' + parsedNames.length + ' Mục' : 'Tra Cứu Ngay')"></span>
                     </button>
                 </div>
             </form>
 
-            {{-- Kết Quả Tra Cứu Tức Thì --}}
-            <div x-show="lastResult !== null" x-transition class="border-t border-slate-200 bg-slate-50/50 p-6">
-                <template x-if="lastResult !== null">
+            {{-- KHU VỰC HIỂN THỊ KẾT QUẢ TRA CỨU --}}
+            <div x-show="resultsList.length > 0" x-transition class="border-t border-slate-200 bg-slate-50/50 p-6 space-y-4">
+                {{-- TRƯỜNG HỢP 1: Tra Cứu 1 Mục Duy Nhất --}}
+                <template x-if="resultsList.length === 1">
                     <div class="p-4 rounded-xl border transition"
-                         :class="lastResult.ok ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'">
+                         :class="resultsList[0].ok ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="space-y-1.5">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs uppercase font-bold px-2 py-0.5 rounded"
-                                          :class="lastResult.ok ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
-                                          x-text="lastResult.ok ? 'Tìm thấy' : lastResult.result"></span>
-                                    <span class="text-sm font-semibold text-slate-700" x-text="lastResult.msg"></span>
+                                          :class="resultsList[0].ok ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                                          x-text="resultsList[0].ok ? 'Tìm thấy' : resultsList[0].result"></span>
+                                    <span class="text-sm font-semibold text-slate-700" x-text="resultsList[0].msg"></span>
                                 </div>
 
                                 {{-- Nếu tra theo Role --}}
-                                <template x-if="lastResult.by === 'role'">
+                                <template x-if="resultsList[0].by === 'role'">
                                     <div class="mt-2 text-sm">
                                         <span class="text-slate-500">Nhân vật:</span>
-                                        <strong class="text-slate-900 font-bold ml-1 font-mono text-base" x-text="lastResult.name"></strong>
+                                        <strong class="text-slate-900 font-bold ml-1 font-mono text-base" x-text="resultsList[0].name"></strong>
                                         <span class="mx-2 text-slate-300">➔</span>
                                         <span class="text-slate-500">Tài khoản:</span>
-                                        <template x-if="lastResult.account">
+                                        <template x-if="resultsList[0].account">
                                             <span class="inline-flex items-center gap-2 ml-1">
-                                                <strong class="text-sky-700 font-bold font-mono text-base bg-sky-100/80 px-2.5 py-0.5 rounded" x-text="lastResult.account"></strong>
-                                                <button type="button" @click="copyText(lastResult.account)" class="text-xs text-sky-600 hover:text-sky-800 font-semibold underline">Copy</button>
+                                                <strong class="text-sky-700 font-bold font-mono text-base bg-sky-100/80 px-2.5 py-0.5 rounded" x-text="resultsList[0].account"></strong>
+                                                <button type="button" @click="copyText(resultsList[0].account)" class="text-xs text-sky-600 hover:text-sky-800 font-semibold underline">Copy</button>
                                             </span>
                                         </template>
-                                        <template x-if="!lastResult.account">
+                                        <template x-if="!resultsList[0].account">
                                             <span class="text-rose-500 italic ml-1">Không có tài khoản</span>
                                         </template>
                                     </div>
                                 </template>
 
                                 {{-- Nếu tra theo Account --}}
-                                <template x-if="lastResult.by === 'account'">
+                                <template x-if="resultsList[0].by === 'account'">
                                     <div class="mt-2 text-sm">
                                         <span class="text-slate-500">Tài khoản:</span>
-                                        <strong class="text-slate-900 font-bold ml-1 font-mono text-base" x-text="lastResult.name"></strong>
+                                        <strong class="text-slate-900 font-bold ml-1 font-mono text-base" x-text="resultsList[0].name"></strong>
                                         <span class="mx-2 text-slate-300">➔</span>
                                         <span class="text-slate-500">Danh sách nhân vật:</span>
-                                        <template x-if="lastResult.roles && lastResult.roles.length > 0">
+                                        <template x-if="resultsList[0].roles && resultsList[0].roles.length > 0">
                                             <div class="flex flex-wrap gap-2 mt-2">
-                                                <template x-for="(role, idx) in lastResult.roles" :key="idx">
+                                                <template x-for="(role, idx) in resultsList[0].roles" :key="idx">
                                                     <span class="inline-flex items-center gap-1.5 bg-white border border-slate-200 shadow-sm rounded-lg px-2.5 py-1 text-xs font-mono font-semibold text-slate-800">
                                                         <span x-text="role"></span>
                                                         <button type="button" @click="copyText(role)" title="Sao chép" class="text-slate-400 hover:text-slate-700">
@@ -197,7 +223,7 @@
                                                 </template>
                                             </div>
                                         </template>
-                                        <template x-if="!lastResult.roles || lastResult.roles.length === 0">
+                                        <template x-if="!resultsList[0].roles || resultsList[0].roles.length === 0">
                                             <span class="text-slate-400 italic ml-1">Chưa tạo nhân vật nào</span>
                                         </template>
                                     </div>
@@ -206,23 +232,106 @@
 
                             {{-- Actions --}}
                             <div class="flex items-center gap-2 shrink-0">
-                                <template x-if="lastResult.ok && lastResult.by === 'role' && lastResult.account">
+                                <template x-if="resultsList[0].ok && resultsList[0].by === 'role' && resultsList[0].account">
                                     <div class="flex items-center gap-2">
-                                        <button type="button" @click="lookupReverse(lastResult.account)" class="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 text-xs font-semibold transition">
+                                        <button type="button" @click="lookupReverse(resultsList[0].account)" class="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 text-xs font-semibold transition">
                                             Xem các NV khác của acc này
                                         </button>
-                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(lastResult.account)" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1">
+                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(resultsList[0].account)" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1">
                                             Kick Acc này
                                         </a>
                                     </div>
                                 </template>
 
-                                <template x-if="lastResult.ok && lastResult.by === 'account'">
-                                    <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(lastResult.name)" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1">
+                                <template x-if="resultsList[0].ok && resultsList[0].by === 'account'">
+                                    <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(resultsList[0].name)" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition flex items-center gap-1">
                                         Kick Acc này
                                     </a>
                                 </template>
                             </div>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- TRƯỜNG HỢP 2: Tra Cứu Hàng Loạt (Nhiều Mục) --}}
+                <template x-if="resultsList.length > 1">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                <span>Kết Quả Tra Cứu Hàng Loạt</span>
+                                <span class="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-sky-100 text-sky-800" x-text="resultsList.length + ' kết quả'"></span>
+                            </h3>
+                            <button type="button" @click="copyAllResults()" class="text-xs px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-xs font-medium transition flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                <span x-text="copiedAll ? '✓ Đã sao chép' : 'Sao chép tất cả kết quả'"></span>
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                                        <th class="p-3">#</th>
+                                        <th class="p-3">Đối tượng tra</th>
+                                        <th class="p-3">Loại</th>
+                                        <th class="p-3">Tài khoản</th>
+                                        <th class="p-3">Danh sách nhân vật</th>
+                                        <th class="p-3">Trạng thái</th>
+                                        <th class="p-3 text-right">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 font-mono">
+                                    <template x-for="(item, idx) in resultsList" :key="idx">
+                                        <tr class="hover:bg-slate-50 transition" :class="item.ok ? '' : 'bg-rose-50/20'">
+                                            <td class="p-3 text-slate-400" x-text="idx + 1"></td>
+                                            <td class="p-3 font-bold text-slate-900" x-text="item.name"></td>
+                                            <td class="p-3">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
+                                                      :class="item.by === 'role' ? 'bg-sky-100 text-sky-700' : 'bg-indigo-100 text-indigo-700'"
+                                                      x-text="item.by === 'role' ? 'Nhân vật' : 'Tài khoản'"></span>
+                                            </td>
+                                            <td class="p-3">
+                                                <template x-if="item.account">
+                                                    <span class="font-bold text-sky-700" x-text="item.account"></span>
+                                                </template>
+                                                <template x-if="!item.account">
+                                                    <span class="text-slate-300">—</span>
+                                                </template>
+                                            </td>
+                                            <td class="p-3 max-w-xs truncate" :title="item.roles ? item.roles.join(', ') : ''">
+                                                <template x-if="item.roles && item.roles.length > 0">
+                                                    <span class="text-slate-800" x-text="item.roles.join(', ')"></span>
+                                                </template>
+                                                <template x-if="!item.roles || item.roles.length === 0">
+                                                    <span class="text-slate-300">—</span>
+                                                </template>
+                                            </td>
+                                            <td class="p-3">
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                      :class="item.ok ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                                                      x-text="item.ok ? 'Tìm thấy' : item.result"></span>
+                                            </td>
+                                            <td class="p-3 text-right">
+                                                <template x-if="item.account">
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        <button type="button" @click="copyText(item.account)" class="text-xs text-sky-600 hover:text-sky-800 font-medium">Copy</button>
+                                                        <span class="text-slate-300">|</span>
+                                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(item.account)" class="text-xs text-rose-600 hover:text-rose-800 font-medium">Kick</a>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!item.account && item.roles && item.roles.length > 0">
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        <button type="button" @click="copyText(item.roles.join(', '))" class="text-xs text-sky-600 hover:text-sky-800 font-medium">Copy NV</button>
+                                                        <span class="text-slate-300">|</span>
+                                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(item.name)" class="text-xs text-rose-600 hover:text-rose-800 font-medium">Kick</a>
+                                                    </div>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </template>
@@ -395,14 +504,22 @@
                     names: '',
                 },
                 loading: false,
-                lastResult: null,
+                resultsList: [],
                 newLiveLogs: [],
+                copiedAll: false,
+
+                get parsedNames() {
+                    if (!this.form.names) return [];
+                    const list = this.form.names.split(/[,;\n\r]+/).map(s => s.trim()).filter(Boolean);
+                    return [...new Set(list)];
+                },
 
                 async submitSearch() {
                     const term = (this.form.names || '').trim();
                     if (!term || this.loading) return;
 
                     this.loading = true;
+                    this.copiedAll = false;
 
                     try {
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -421,20 +538,22 @@
 
                         const data = await response.json();
                         if (response.ok && data.results && data.results.length > 0) {
-                            const item = data.results[0];
-                            this.lastResult = item;
+                            // Lưu toàn bộ danh sách kết quả (kể cả 1 hay nhiều mục)
+                            this.resultsList = data.results;
 
-                            // Đưa ngay vào đầu bảng nhật ký trực tiếp trên giao diện
-                            this.newLiveLogs.unshift({
-                                time: (new Date()).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                                by: item.by,
-                                by_text: item.by === 'role' ? 'Tên nhân vật' : 'Tài khoản',
-                                query_name: item.name,
-                                account: item.account,
-                                roles: item.roles || [],
-                                ok: item.ok,
-                                result: item.result,
-                                admin_name: 'Bạn',
+                            // Đưa toàn bộ các kết quả mới vào đầu bảng nhật ký
+                            data.results.forEach(item => {
+                                this.newLiveLogs.unshift({
+                                    time: (new Date()).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                                    by: item.by,
+                                    by_text: item.by === 'role' ? 'Tên nhân vật' : 'Tài khoản',
+                                    query_name: item.name,
+                                    account: item.account,
+                                    roles: item.roles || [],
+                                    ok: item.ok,
+                                    result: item.result,
+                                    admin_name: 'Bạn',
+                                });
                             });
                         } else {
                             alert(data.msg || 'Có lỗi xảy ra khi tra cứu.');
@@ -458,6 +577,24 @@
                         alert('Đã sao chép: ' + text);
                     }).catch(() => {
                         prompt('Sao chép giá trị:', text);
+                    });
+                },
+
+                copyAllResults() {
+                    if (!this.resultsList.length) return;
+                    const lines = this.resultsList.map(r => {
+                        if (r.by === 'role') {
+                            return `${r.name}\t${r.account || 'KHÔNG_CÓ'}`;
+                        } else {
+                            return `${r.name}\t${(r.roles || []).join(', ') || 'KHÔNG_CÓ'}`;
+                        }
+                    }).join('\n');
+
+                    navigator.clipboard.writeText(lines).then(() => {
+                        this.copiedAll = true;
+                        setTimeout(() => this.copiedAll = false, 2500);
+                    }).catch(() => {
+                        prompt('Sao chép kết quả:', lines);
                     });
                 }
             };
