@@ -64,6 +64,18 @@
                                 <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded {{ request()->routeIs('admin.game-kicks.*') ? 'bg-white/20 text-white' : 'bg-rose-500/20 text-rose-300' }}">API v2</span>
                             </a>
 
+                            {{-- Chức năng TRA CỨU NHÂN VẬT & TÀI KHOẢN --}}
+                            <a href="{{ route('admin.game-lookups.index') }}"
+                               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl transition font-semibold {{ request()->routeIs('admin.game-lookups.*') ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md shadow-sky-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('admin.game-lookups.*') ? 'text-white' : 'text-sky-400' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                    </svg>
+                                    <span>Tra cứu nhân vật</span>
+                                </div>
+                                <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded {{ request()->routeIs('admin.game-lookups.*') ? 'bg-white/20 text-white' : 'bg-sky-500/20 text-sky-300' }}">API v2</span>
+                            </a>
+
                             {{-- Quản lý TÀI KHOẢN (Admin & User) --}}
                             <a href="{{ route('admin.accounts.index') }}"
                                class="flex items-center justify-between px-3.5 py-2.5 rounded-xl transition font-semibold {{ request()->routeIs('admin.accounts.*') ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">

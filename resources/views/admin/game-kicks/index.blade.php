@@ -517,6 +517,15 @@
                 pollCount: 0,
 
                 init() {
+                    // Tự động nạp thông tin nếu đi từ trang Tra cứu sang (query params)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.has('name')) {
+                        this.form.name = urlParams.get('name') || '';
+                    }
+                    if (urlParams.has('type')) {
+                        this.form.type = urlParams.get('type') === 'role' ? 'role' : 'account';
+                    }
+
                     // Nếu đang có tác vụ trong Queue (pending), kiểm tra ngầm nhẹ nhàng qua API, KHÔNG ép reload toàn trang
                     if (this.hasPending) {
                         this.startQueuePolling();

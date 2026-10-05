@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\GameKickController;
+use App\Http\Controllers\Admin\GameLookupController;
 use App\Http\Controllers\Admin\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('game-kicks/cancel-all', [GameKickController::class, 'cancelAll'])->name('game-kicks.cancel-all');
         Route::post('game-kicks/{kickLog}/cancel', [GameKickController::class, 'cancel'])->name('game-kicks.cancel');
         Route::post('game-kicks/{kickLog}/status', [GameKickController::class, 'checkStatus'])->name('game-kicks.status');
+
+        // 2. Tra Cứu Nhân Vật / Tài Khoản (GameServer API v2)
+        Route::get('game-lookups', [GameLookupController::class, 'index'])->name('game-lookups.index');
+        Route::post('game-lookups/search', [GameLookupController::class, 'search'])->name('game-lookups.search');
 
         // 2. Quản lý Tài khoản (Đăng ký / Danh sách / Khóa / Xóa)
         Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
