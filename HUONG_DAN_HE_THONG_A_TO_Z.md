@@ -53,10 +53,10 @@ Tài liệu này được biên soạn chi tiết, dễ hiểu dành cho ngườ
 
 ---
 
-## 📌 PHẦN 3: BA TÍNH NĂNG CHÍNH ĐANG HOẠT ĐỘNG
+## 📌 PHẦN 3: CÁC TÍNH NĂNG CHÍNH ĐANG HOẠT ĐỘNG
 
 ### 1. Kick Người Chơi (GameServer API v2)
-- **Kick đơn lẻ (1 tài khoản)**:
+- **Kick đơn lẻ (1 tài khoản / nhân vật)**:
   - Nhập tên ➔ Bấm **Xác Nhận Kick Ngay**.
   - Hệ thống gọi trực tiếp GameServer `103.206.216.8:8090`, có kết quả ngay sau 2 - 3 giây (Thành công / Không online / Lỗi).
 - **Kick hàng loạt (Nhiều tài khoản)**:
@@ -65,14 +65,21 @@ Tài liệu này được biên soạn chi tiết, dễ hiểu dành cho ngườ
   - Hệ thống đẩy danh sách vào Queue, worker chạy ngầm trên VPS sẽ kick lần lượt, tự giãn cách 2 giây/acc chống rate limit.
   - **Cơ chế tự động dứt điểm trạng thái**: Nếu GameServer cần quét map, hệ thống tự động hỏi lại qua `kick_status.php` để lấy kết quả cuối cùng, **không bao giờ bị kẹt ở "Đang xử lý"**.
 
-### 2. Quản Lý Tài Khoản (Admin & User)
+### 2. Tra Cứu 2 Chiều: Nhân Vật ⇄ Tài Khoản (GameServer API v2 - lookup.php)
+- **Địa chỉ API**: `http://103.206.216.8:8090/v2/lookup.php` (chuẩn chữ ký HMAC-SHA256 với `KICK_KEY`).
+- **Tra theo Tên Nhân Vật (`by: role`)**: Nhập tên nhân vật (hỗ trợ có dấu tiếng Việt) ➔ Trả về tên tài khoản sở hữu. Có nút bấm liên kết trực tiếp sang **Kick tài khoản này** hoặc **Xem các nhân vật khác của tài khoản này**.
+- **Tra theo Tài Khoản (`by: account`)**: Nhập tài khoản ➔ Trả về danh sách tối đa 20 nhân vật thuộc tài khoản đó.
+- **Hỗ trợ tra cứu hàng loạt (Batch)**: Paste danh sách nhiều dòng ➔ Hệ thống tra cứu và hiển thị dạng bảng tổng hợp, hỗ trợ sao chép kết quả 1-click.
+- **Lưu nhật ký tra cứu**: Toàn bộ lịch sử tra cứu của các Admin được lưu vào CSDL để quản trị viên dễ dàng rà soát.
+
+### 3. Quản Lý Tài Khoản (Admin & User)
 - Thêm tài khoản mới, phân quyền truy cập:
   - **Admin**: Được đăng nhập vào trang quản trị (`/admin`).
   - **User**: Tài khoản thông thường.
 - Khóa / Mở khóa tài khoản nhanh chỉ với 1 click.
 - Xóa tài khoản an toàn (hệ thống chặn tự xóa chính mình).
 
-### 3. Cài Đặt Bảo Mật 2FA (Google Authenticator)
+### 4. Cài Đặt Bảo Mật 2FA (Google Authenticator)
 - Quét mã QR bằng ứng dụng Google Authenticator hoặc Authy trên điện thoại.
 - Nhập mã 6 số để kích hoạt.
 - Tự động sinh ra 8 mã khôi phục dự phòng (Recovery Codes) dùng khi mất điện thoại.
