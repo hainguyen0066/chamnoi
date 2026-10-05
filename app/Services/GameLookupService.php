@@ -19,7 +19,8 @@ class GameLookupService
     {
         $this->lookupUrl = (string) (env('GAME_LOOKUP_API_URL') ?: config('services.game_kick.lookup_url', 'http://103.206.216.8:8090/v2/lookup.php'));
         $this->key = (string) (env('KICK_KEY') ?: env('GAME_KICK_KEY') ?: config('services.game_kick.key', ''));
-        $this->timeout = (int) (env('GAME_LOOKUP_TIMEOUT') ?: 15);
+        // Timeout 10s, chạy 1 lần duy nhất dứt điểm, không retry
+        $this->timeout = (int) (env('GAME_LOOKUP_TIMEOUT') ?: 10);
     }
 
     public function getLookupUrl(): string
@@ -183,7 +184,7 @@ class GameLookupService
     }
 
     /**
-     * Tra cứu hàng loạt danh sách.
+     * Tra cứu hàng loạt danh sách. Mỗi mục chạy đúng 1 lần duy nhất, không retry nếu lỗi.
      *
      * @param string $by 'role' hoặc 'account'
      * @param array<string> $names Danh sách các tên cần tra
@@ -194,13 +195,20 @@ class GameLookupService
     public function lookupBatch(string $by, array $names, ?string $adminName = null, ?int $adminId = null): array
     {
         $results = [];
-        $uniqueNames = array_unique(array_filter(array_map('trim', $names)));
+        $uniqueNames = array_values(array_unique(array_filter(array_map('trim', $names))));
+        $total = count($uniqueNames);
 
-        foreach ($uniqueNames as $name) {
+        foreach ($uniqueNames as $index => $name) {
             if ($name === '') {
                 continue;
             }
+            // Gọi đúng 1 lần duy nhất
             $results[] = $this->lookup($by, $name, $adminName, $adminId, true);
+
+            // Giãn cách nhẹ 0.3s giữa các request nếu còn mục tiếp theo để chống quá tải/rate-limit GameServer
+            if ($index < $total - 1) {
+                usleep(300000);
+            }
         }
 
         return $results;

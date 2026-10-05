@@ -62,6 +62,12 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <span class="text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-md font-mono font-medium flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        Chạy 1 lần dứt điểm (Không retry)
+                    </span>
                     <span class="text-xs bg-slate-200/70 text-slate-600 px-2.5 py-1 rounded-md font-mono">HMAC-SHA256 UTF-8</span>
                 </div>
             </div>
@@ -364,6 +370,54 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-mono">
+                        {{-- Các lượt tra cứu vừa thực hiện tức thì trong phiên (không cần reload trang) --}}
+                        <template x-for="(liveLog, lIdx) in newLiveLogs" :key="'live-' + lIdx">
+                            <tr class="bg-sky-50/40 hover:bg-sky-50 transition border-l-4 border-l-sky-500">
+                                <td class="p-3.5 text-slate-500 whitespace-nowrap flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                                    <span x-text="liveLog.time"></span>
+                                    <span class="text-[9px] px-1 py-0.2 rounded bg-sky-200 text-sky-800 font-bold uppercase">Mới</span>
+                                </td>
+                                <td class="p-3.5 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
+                                          :class="liveLog.by === 'role' ? 'bg-sky-100 text-sky-700' : 'bg-indigo-100 text-indigo-700'"
+                                          x-text="liveLog.by_text"></span>
+                                </td>
+                                <td class="p-3.5 font-bold text-slate-900 whitespace-nowrap" x-text="liveLog.query_name"></td>
+                                <td class="p-3.5 text-slate-700 whitespace-nowrap">
+                                    <template x-if="liveLog.account">
+                                        <span class="font-bold text-sky-700" x-text="liveLog.account"></span>
+                                    </template>
+                                    <template x-if="!liveLog.account">
+                                        <span class="text-slate-300">—</span>
+                                    </template>
+                                </td>
+                                <td class="p-3.5 text-slate-700 max-w-xs truncate" :title="liveLog.roles ? liveLog.roles.join(', ') : ''">
+                                    <template x-if="liveLog.roles && liveLog.roles.length > 0">
+                                        <span x-text="liveLog.roles.join(', ')"></span>
+                                    </template>
+                                    <template x-if="!liveLog.roles || liveLog.roles.length === 0">
+                                        <span class="text-slate-300">—</span>
+                                    </template>
+                                </td>
+                                <td class="p-3.5 whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                          :class="liveLog.ok ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200'"
+                                          x-text="liveLog.ok ? 'Tìm thấy' : liveLog.result"></span>
+                                </td>
+                                <td class="p-3.5 text-slate-500 whitespace-nowrap" x-text="liveLog.admin_name"></td>
+                                <td class="p-3.5 text-right whitespace-nowrap">
+                                    <template x-if="liveLog.account">
+                                        <a :href="'{{ route('admin.game-kicks.index') }}?type=account&name=' + encodeURIComponent(liveLog.account)"
+                                           class="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800 font-semibold">
+                                            <span>Kick</span>
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        </a>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+
                         @forelse ($logs as $log)
                             <tr class="hover:bg-slate-50/80 transition {{ $log->isSuccess() ? '' : 'bg-slate-50/30' }}">
                                 <td class="p-3.5 text-slate-500 whitespace-nowrap">
@@ -438,6 +492,7 @@
                 },
                 loading: false,
                 results: [],
+                newLiveLogs: [],
                 copiedAll: false,
 
                 get itemCount() {
@@ -446,7 +501,7 @@
                 },
 
                 async submitSearch() {
-                    if (!this.form.names.trim()) return;
+                    if (!this.form.names.trim() || this.loading) return;
 
                     this.loading = true;
                     this.copiedAll = false;
@@ -468,6 +523,20 @@
                         const data = await response.json();
                         if (response.ok && data.results) {
                             this.results = data.results;
+                            // Đưa các kết quả mới vào đầu bảng nhật ký tức thì (chạy 1 lần duy nhất, không reload trang)
+                            data.results.forEach(item => {
+                                this.newLiveLogs.unshift({
+                                    time: (new Date()).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                                    by: item.by,
+                                    by_text: item.by === 'role' ? 'Tên nhân vật' : 'Tài khoản',
+                                    query_name: item.name,
+                                    account: item.account,
+                                    roles: item.roles || [],
+                                    ok: item.ok,
+                                    result: item.result,
+                                    admin_name: 'Bạn',
+                                });
+                            });
                         } else {
                             alert(data.msg || 'Có lỗi xảy ra khi tra cứu.');
                         }
