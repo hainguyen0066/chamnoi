@@ -216,11 +216,6 @@
                                                         <button type="button" @click="copyText(role)" title="Sao chép" class="text-slate-400 hover:text-slate-700">
                                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                                         </button>
-                                                        <button type="button" @click="kickDirectly('role', role)" :disabled="kickingTargets.includes(role)" :title="'Kick nhân vật ' + role + ' ngay'" class="text-rose-500 hover:text-rose-700 cursor-pointer disabled:opacity-50 inline-flex items-center gap-0.5">
-                                                            <svg x-show="kickingTargets.includes(role)" class="animate-spin w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                                                            <svg x-show="!kickingTargets.includes(role) && !kickStatusMap[role]?.ok" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                                                            <span x-show="kickStatusMap[role]?.ok" class="text-[10px] text-emerald-600 font-bold" title="Đã kick thành công">✓</span>
-                                                        </button>
                                                     </span>
                                                 </template>
                                             </div>
