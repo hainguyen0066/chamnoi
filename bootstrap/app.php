@@ -14,8 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Guard admin unauthenticated → về trang login admin
         $middleware->redirectGuestsTo(fn (Request $request) => route('admin.login'));
-        // Guard admin authenticated → về trang Kick Người Chơi
-        $middleware->redirectUsersTo(fn (Request $request) => route('admin.game-kicks.index'));
+        // Guard admin authenticated → về trang Dashboard
+        $middleware->redirectUsersTo(fn (Request $request) => route('admin.dashboard'));
+
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackPageVisitMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
