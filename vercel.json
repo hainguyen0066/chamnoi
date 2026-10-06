@@ -21,7 +21,7 @@
     "APP_NAME": "Mầm Ngôn Ngữ",
     "APP_ENV": "production",
     "APP_KEY": "base64:YH3/8hd9F+CrYhkLXRhADlOdXwF8zkQ4sXk+IDevIx8=",
-    "APP_DEBUG": "true",
+    "APP_DEBUG": "false",
     "DB_CONNECTION": "sqlite",
     "DB_DATABASE": "/tmp/database.sqlite",
     "SESSION_DRIVER": "cookie",
