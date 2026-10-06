@@ -1,1 +1,2 @@
-*.sqlite*
+# Cho phep database.sqlite vao git de deploy Vercel
+!.gitkeep
