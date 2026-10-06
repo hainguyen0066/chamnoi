@@ -22,6 +22,8 @@
     "APP_ENV": "production",
     "APP_KEY": "base64:YH3/8hd9F+CrYhkLXRhADlOdXwF8zkQ4sXk+IDevIx8=",
     "APP_DEBUG": "false",
+    "APP_URL": "https://chamnoi-ten.vercel.app",
+    "ASSET_URL": "https://chamnoi-ten.vercel.app",
     "DB_CONNECTION": "sqlite",
     "DB_DATABASE": "/tmp/database.sqlite",
     "SESSION_DRIVER": "cookie",

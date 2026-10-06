@@ -17,6 +17,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // Guard admin authenticated → về trang Dashboard
         $middleware->redirectUsersTo(fn (Request $request) => route('admin.dashboard'));
 
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\TrackPageVisitMiddleware::class,
         ]);

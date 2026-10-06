@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (isset($_ENV['VERCEL']) || env('VERCEL') || app()->environment('production') || str_contains(request()->header('host', ''), 'vercel.app')) {
+            URL::forceScheme('https');
+        }
         // Giới hạn độ dài mặc định của string() còn 191 ký tự để unique index
         // trên cột utf8mb4 (191 * 4 = 764 byte) không vượt giới hạn khoá của MySQL.
         Schema::defaultStringLength(191);
